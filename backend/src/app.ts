@@ -16,9 +16,6 @@ import bidRoutes from './modules/bids/bid.routes';
 import engagementRoutes from './modules/engagements/engagement.routes';
 import notificationRoutes from './modules/notifications/notification.routes';
 import adminRoutes from './modules/admin/admin.routes';
-import messagingRoutes from './modules/messaging/messaging.routes';
-import reviewRoutes from './modules/reviews/review.routes';
-import disputeRoutes from './modules/disputes/dispute.routes';
 
 const app = express();
 
@@ -42,9 +39,6 @@ app.use('/api/v1', projectRoutes);
 app.use('/api/v1', bidRoutes);
 app.use('/api/v1', engagementRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
-app.use('/api/v1', messagingRoutes);
-app.use('/api/v1', reviewRoutes);
-app.use('/api/v1', disputeRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 app.use(errorHandler);

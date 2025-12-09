@@ -8,3 +8,6 @@ export const listProjectBids = async (projectId: number) => prisma.bid.findMany(
 export const listMyBids = async (freelancerId: number) => prisma.bid.findMany({ where: { freelancerId } });
 
 export const updateBidStatus = (id: number, status: string) => prisma.bid.update({ where: { id }, data: { status } });
+export const listProjectBids = async (projectId: number) => prisma.bid.findMany({ where: { projectId } });
+
+export const listMyBids = async (freelancerId: number) => prisma.bid.findMany({ where: { freelancerId } });

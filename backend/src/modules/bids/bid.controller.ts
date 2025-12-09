@@ -22,6 +22,11 @@ export const createBidHandler = async (req: AuthenticatedRequest, res: Response)
   if (project) {
     await createNotification(project.businessId, 'BID_SUBMITTED', { projectId: project.id, bidId: bid.id });
   }
+import { createBid, listMyBids, listProjectBids } from './bid.service';
+
+export const createBidHandler = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+  const bid = await createBid(Number(req.params.projectId), req.user.id, req.body);
   return success(res, bid, 201);
 };
 

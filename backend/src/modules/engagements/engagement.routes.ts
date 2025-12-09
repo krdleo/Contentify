@@ -14,6 +14,7 @@ import {
   startEngagementHandler,
   updateMilestoneHandler
 } from './engagement.controller';
+import { acceptBidHandler, getEngagementHandler, listMyEngagementsHandler } from './engagement.controller';
 import { requireAuth, requireRole } from '../../middleware/authMiddleware';
 
 const router = Router();
