@@ -1,0 +1,360 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  BUSINESS
+  FREELANCER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum MediaType {
+  IMAGE
+  LINK
+}
+
+enum BudgetType {
+  FIXED
+  HOURLY
+}
+
+enum LocationType {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum Visibility {
+  PUBLIC
+  INVITE_ONLY
+}
+
+enum ProjectStatus {
+  DRAFT
+  OPEN
+  UNDER_REVIEW
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BidStatus {
+  SUBMITTED
+  SHORTLISTED
+  REJECTED
+  ACCEPTED
+  WITHDRAWN
+}
+
+enum EngagementStatus {
+  NEGOTIATION
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_REFUND
+  RESOLVED_RELEASE
+  PARTIAL
+  DISMISSED
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  passwordHash     String
+  role             UserRole
+  status           UserStatus @default(ACTIVE)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  isAdmin          Boolean   @default(false)
+  businessProfile  BusinessProfile?
+  freelancerProfile FreelancerProfile?
+  reviewsGiven     Review[] @relation("ReviewsGiven")
+  reviewsReceived  Review[] @relation("ReviewsReceived")
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+}
+
+model BusinessProfile {
+  id                Int    @id
+  user              User   @relation(fields: [id], references: [id])
+  companyName       String
+  contactPersonName String?
+  gstin             String?
+  websiteUrl        String?
+  industry          String?
+  sizeBucket        String?
+  logoUrl           String?
+  description       String?
+  projects      Project[]
+  engagements   Engagement[]
+  reviews       Review[] @relation("BusinessReviews")
+}
+
+model FreelancerProfile {
+  id               Int    @id
+  user             User   @relation(fields: [id], references: [id])
+  displayName      String
+  headline         String?
+  bio              String?
+  city             String?
+  state            String?
+  yearsExperience  Int?
+  primaryCategory  String?
+  hourlyRateMin    Int?
+  hourlyRateMax    Int?
+  availabilityStatus String?
+  skills         FreelancerSkill[]
+  portfolioItems PortfolioItem[]
+  bids           Bid[]
+  engagements    Engagement[]
+  reviews        Review[] @relation("FreelancerReviews")
+}
+
+model Skill {
+  id        Int    @id @default(autoincrement())
+  name      String
+  category  String
+  freelancers FreelancerSkill[]
+}
+
+model FreelancerSkill {
+  id              Int               @id @default(autoincrement())
+  freelancer      FreelancerProfile @relation(fields: [freelancerId], references: [id])
+  freelancerId    Int
+  skill           Skill             @relation(fields: [skillId], references: [id])
+  skillId         Int
+}
+
+model PortfolioItem {
+  id           Int               @id @default(autoincrement())
+  freelancer   FreelancerProfile @relation(fields: [freelancerId], references: [id])
+  freelancerId Int
+  title        String
+  description  String?
+  mediaType    MediaType
+  mediaUrl     String
+  thumbnailUrl String?
+  tags         String[]
+  isPublic     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+}
+
+model Project {
+  id             Int             @id @default(autoincrement())
+  business       BusinessProfile @relation(fields: [businessId], references: [id])
+  businessId     Int
+  title          String
+  description    String
+  category       String
+  budgetType     BudgetType
+  budgetMin      Int?
+  budgetMax      Int?
+  locationType   LocationType
+  city           String?
+  visibility     Visibility
+  status         ProjectStatus   @default(OPEN)
+  expectedEndDate DateTime?
+  attachments    ProjectAttachment[]
+  bids           Bid[]
+  engagements    Engagement[]
+  conversations  Conversation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectAttachment {
+  id               Int      @id @default(autoincrement())
+  project          Project  @relation(fields: [projectId], references: [id])
+  projectId        Int
+  fileUrl          String
+  fileType         String
+  originalFilename String
+}
+
+model Bid {
+  id                  Int               @id @default(autoincrement())
+  project             Project           @relation(fields: [projectId], references: [id])
+  projectId           Int
+  freelancer          FreelancerProfile @relation(fields: [freelancerId], references: [id])
+  freelancerId        Int
+  bidAmount           Int
+  bidType             BudgetType
+  proposedTimelineDays Int
+  coverLetter         String?
+  status              BidStatus         @default(SUBMITTED)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  engagement          Engagement?
+}
+
+model Engagement {
+  id           Int               @id @default(autoincrement())
+  project      Project           @relation(fields: [projectId], references: [id])
+  projectId    Int
+  business     BusinessProfile   @relation(fields: [businessId], references: [id])
+  businessId   Int
+  freelancer   FreelancerProfile @relation(fields: [freelancerId], references: [id])
+  freelancerId Int
+  bid          Bid               @relation(fields: [bidId], references: [id])
+  bidId        Int
+  status       EngagementStatus  @default(NEGOTIATION)
+  contractUrl  String?
+  startDate    DateTime?
+  endDate      DateTime?
+  milestones   Milestone[]
+  conversations Conversation[]
+  reviews      Review[]
+  disputes     Dispute[]
+  paymentStatus PaymentStatus     @default(UNPAID)
+  paymentNotes String?
+  freelancerMarkedReceived Boolean @default(false)
+  freelancerMarkedReceivedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Milestone {
+  id           Int          @id @default(autoincrement())
+  engagement   Engagement   @relation(fields: [engagementId], references: [id])
+  engagementId Int
+  title        String
+  description  String?
+  amount       Int
+  dueDate      DateTime?
+  sequenceOrder Int
+  status       MilestoneStatus @default(PENDING)
+  deliverables MilestoneDeliverable[]
+}
+
+model MilestoneDeliverable {
+  id           Int        @id @default(autoincrement())
+  milestone    Milestone  @relation(fields: [milestoneId], references: [id])
+  milestoneId  Int
+  fileUrl      String
+  notes        String?
+  submittedAt  DateTime   @default(now())
+}
+
+model Conversation {
+  id             Int           @id @default(autoincrement())
+  project        Project?      @relation(fields: [projectId], references: [id])
+  projectId      Int?
+  engagement     Engagement?   @relation(fields: [engagementId], references: [id])
+  engagementId   Int?
+  createdBy      User          @relation(fields: [createdById], references: [id])
+  createdById    Int
+  createdAt      DateTime      @default(now())
+  messages       Message[]
+  participants   ConversationParticipant[]
+}
+
+model ConversationParticipant {
+  id             Int          @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  user           User         @relation(fields: [userId], references: [id])
+  userId         Int
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  sender         User         @relation(fields: [senderId], references: [id])
+  senderId       Int
+  messageText    String
+  attachmentUrl  String?
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+}
+
+model Review {
+  id              Int       @id @default(autoincrement())
+  engagement      Engagement @relation(fields: [engagementId], references: [id])
+  engagementId    Int
+  reviewer        User      @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewerId      Int
+  reviewee        User      @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  revieweeId      Int
+  ratingOverall   Int
+  ratingQuality   Int
+  ratingCommunication Int
+  ratingTimeliness Int
+  comment         String?
+  createdAt       DateTime @default(now())
+}
+
+model Dispute {
+  id              Int        @id @default(autoincrement())
+  engagement      Engagement @relation(fields: [engagementId], references: [id])
+  engagementId    Int
+  raisedBy        User       @relation(fields: [raisedById], references: [id])
+  raisedById      Int
+  reasonCode      String
+  description     String
+  status          DisputeStatus @default(OPEN)
+  resolutionNotes String?
+  createdAt       DateTime   @default(now())
+  resolvedAt      DateTime?
+  attachments     DisputeAttachment[]
+}
+
+model DisputeAttachment {
+  id          Int      @id @default(autoincrement())
+  dispute     Dispute  @relation(fields: [disputeId], references: [id])
+  disputeId   Int
+  fileUrl     String
+  description String?
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  type       String
+  payload    Json
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     Int?
+  action     String
+  entityType String
+  entityId   Int?
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now())
+}
