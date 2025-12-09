@@ -5,3 +5,6 @@ export const markNotificationRead = async (userId: number, id: number) =>
   prisma.notification.update({ where: { id }, data: { isRead: true } });
 export const markAllRead = async (userId: number) =>
   prisma.notification.updateMany({ where: { userId }, data: { isRead: true } });
+
+export const createNotification = async (userId: number, type: string, payload: any) =>
+  prisma.notification.create({ data: { userId, type, payload } });
