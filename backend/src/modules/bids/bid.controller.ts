@@ -15,18 +15,17 @@ const bidSchema = z.object({
 
 export const createBidHandler = async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+
   const parsed = bidSchema.safeParse(req.body);
   if (!parsed.success) return failure(res, 'VALIDATION_ERROR', 'Invalid bid', undefined, 422);
+
   const bid = await createBid(Number(req.params.projectId), req.user.id, parsed.data);
+
   const project = await prisma.project.findUnique({ where: { id: Number(req.params.projectId) } });
   if (project) {
     await createNotification(project.businessId, 'BID_SUBMITTED', { projectId: project.id, bidId: bid.id });
   }
-import { createBid, listMyBids, listProjectBids } from './bid.service';
 
-export const createBidHandler = async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
-  const bid = await createBid(Number(req.params.projectId), req.user.id, req.body);
   return success(res, bid, 201);
 };
 
@@ -41,12 +40,12 @@ export const listMyBidsHandler = async (req: AuthenticatedRequest, res: Response
   return success(res, bids);
 };
 
-export const shortlistBidHandler = async (_req: AuthenticatedRequest, res: Response) => {
-  const bid = await updateBidStatus(Number(_req.params.id), 'SHORTLISTED');
+export const shortlistBidHandler = async (req: AuthenticatedRequest, res: Response) => {
+  const bid = await updateBidStatus(Number(req.params.id), 'SHORTLISTED');
   return success(res, bid);
 };
 
-export const rejectBidHandler = async (_req: AuthenticatedRequest, res: Response) => {
-  const bid = await updateBidStatus(Number(_req.params.id), 'REJECTED');
+export const rejectBidHandler = async (req: AuthenticatedRequest, res: Response) => {
+  const bid = await updateBidStatus(Number(req.params.id), 'REJECTED');
   return success(res, bid);
 };

@@ -88,25 +88,29 @@ enum DisputeStatus {
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
-  email            String    @unique
-  passwordHash     String
-  role             UserRole
-  status           UserStatus @default(ACTIVE)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  isAdmin          Boolean   @default(false)
-  businessProfile  BusinessProfile?
-  freelancerProfile FreelancerProfile?
-  reviewsGiven     Review[] @relation("ReviewsGiven")
-  reviewsReceived  Review[] @relation("ReviewsReceived")
-  notifications    Notification[]
-  auditLogs        AuditLog[]
+  id                       Int                       @id @default(autoincrement())
+  email                    String                    @unique
+  passwordHash             String
+  role                     UserRole
+  status                   UserStatus                @default(ACTIVE)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  isAdmin                  Boolean                   @default(false)
+  businessProfile          BusinessProfile?
+  freelancerProfile        FreelancerProfile?
+  reviewsGiven             Review[]                  @relation("ReviewsGiven")
+  reviewsReceived          Review[]                  @relation("ReviewsReceived")
+  conversationsCreated     Conversation[]
+  conversationParticipants ConversationParticipant[]
+  messagesSent             Message[]
+  disputesRaised           Dispute[]
+  notifications            Notification[]
+  auditLogs                AuditLog[]
 }
 
 model BusinessProfile {
-  id                Int    @id
-  user              User   @relation(fields: [id], references: [id])
+  id                Int          @id
+  user              User         @relation(fields: [id], references: [id])
   companyName       String
   contactPersonName String?
   gstin             String?
@@ -115,44 +119,42 @@ model BusinessProfile {
   sizeBucket        String?
   logoUrl           String?
   description       String?
-  projects      Project[]
-  engagements   Engagement[]
-  reviews       Review[] @relation("BusinessReviews")
+  projects          Project[]
+  engagements       Engagement[]
 }
 
 model FreelancerProfile {
-  id               Int    @id
-  user             User   @relation(fields: [id], references: [id])
-  displayName      String
-  headline         String?
-  bio              String?
-  city             String?
-  state            String?
-  yearsExperience  Int?
-  primaryCategory  String?
-  hourlyRateMin    Int?
-  hourlyRateMax    Int?
+  id                 Int               @id
+  user               User              @relation(fields: [id], references: [id])
+  displayName        String
+  headline           String?
+  bio                String?
+  city               String?
+  state              String?
+  yearsExperience    Int?
+  primaryCategory    String?
+  hourlyRateMin      Int?
+  hourlyRateMax      Int?
   availabilityStatus String?
-  skills         FreelancerSkill[]
-  portfolioItems PortfolioItem[]
-  bids           Bid[]
-  engagements    Engagement[]
-  reviews        Review[] @relation("FreelancerReviews")
+  skills             FreelancerSkill[]
+  portfolioItems     PortfolioItem[]
+  bids               Bid[]
+  engagements        Engagement[]
 }
 
 model Skill {
-  id        Int    @id @default(autoincrement())
-  name      String
-  category  String
+  id          Int               @id @default(autoincrement())
+  name        String
+  category    String
   freelancers FreelancerSkill[]
 }
 
 model FreelancerSkill {
-  id              Int               @id @default(autoincrement())
-  freelancer      FreelancerProfile @relation(fields: [freelancerId], references: [id])
-  freelancerId    Int
-  skill           Skill             @relation(fields: [skillId], references: [id])
-  skillId         Int
+  id           Int               @id @default(autoincrement())
+  freelancer   FreelancerProfile @relation(fields: [freelancerId], references: [id])
+  freelancerId Int
+  skill        Skill             @relation(fields: [skillId], references: [id])
+  skillId      Int
 }
 
 model PortfolioItem {
@@ -170,31 +172,31 @@ model PortfolioItem {
 }
 
 model Project {
-  id             Int             @id @default(autoincrement())
-  business       BusinessProfile @relation(fields: [businessId], references: [id])
-  businessId     Int
-  title          String
-  description    String
-  category       String
-  budgetType     BudgetType
-  budgetMin      Int?
-  budgetMax      Int?
-  locationType   LocationType
-  city           String?
-  visibility     Visibility
-  status         ProjectStatus   @default(OPEN)
+  id              Int                 @id @default(autoincrement())
+  business        BusinessProfile     @relation(fields: [businessId], references: [id])
+  businessId      Int
+  title           String
+  description     String
+  category        String
+  budgetType      BudgetType
+  budgetMin       Int?
+  budgetMax       Int?
+  locationType    LocationType
+  city            String?
+  visibility      Visibility
+  status          ProjectStatus       @default(OPEN)
   expectedEndDate DateTime?
-  attachments    ProjectAttachment[]
-  bids           Bid[]
-  engagements    Engagement[]
-  conversations  Conversation[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  attachments     ProjectAttachment[]
+  bids            Bid[]
+  engagements     Engagement[]
+  conversations   Conversation[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 }
 
 model ProjectAttachment {
-  id               Int      @id @default(autoincrement())
-  project          Project  @relation(fields: [projectId], references: [id])
+  id               Int     @id @default(autoincrement())
+  project          Project @relation(fields: [projectId], references: [id])
   projectId        Int
   fileUrl          String
   fileType         String
@@ -202,80 +204,80 @@ model ProjectAttachment {
 }
 
 model Bid {
-  id                  Int               @id @default(autoincrement())
-  project             Project           @relation(fields: [projectId], references: [id])
-  projectId           Int
-  freelancer          FreelancerProfile @relation(fields: [freelancerId], references: [id])
-  freelancerId        Int
-  bidAmount           Int
-  bidType             BudgetType
+  id                   Int               @id @default(autoincrement())
+  project              Project           @relation(fields: [projectId], references: [id])
+  projectId            Int
+  freelancer           FreelancerProfile @relation(fields: [freelancerId], references: [id])
+  freelancerId         Int
+  bidAmount            Int
+  bidType              BudgetType
   proposedTimelineDays Int
-  coverLetter         String?
-  status              BidStatus         @default(SUBMITTED)
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  engagement          Engagement?
+  coverLetter          String?
+  status               BidStatus         @default(SUBMITTED)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  engagement           Engagement?
 }
 
 model Engagement {
-  id           Int               @id @default(autoincrement())
-  project      Project           @relation(fields: [projectId], references: [id])
-  projectId    Int
-  business     BusinessProfile   @relation(fields: [businessId], references: [id])
-  businessId   Int
-  freelancer   FreelancerProfile @relation(fields: [freelancerId], references: [id])
-  freelancerId Int
-  bid          Bid               @relation(fields: [bidId], references: [id])
-  bidId        Int
-  status       EngagementStatus  @default(NEGOTIATION)
-  contractUrl  String?
-  startDate    DateTime?
-  endDate      DateTime?
-  milestones   Milestone[]
-  conversations Conversation[]
-  reviews      Review[]
-  disputes     Dispute[]
-  paymentStatus PaymentStatus     @default(UNPAID)
-  paymentNotes String?
-  freelancerMarkedReceived Boolean @default(false)
+  id                         Int               @id @default(autoincrement())
+  project                    Project           @relation(fields: [projectId], references: [id])
+  projectId                  Int
+  business                   BusinessProfile   @relation(fields: [businessId], references: [id])
+  businessId                 Int
+  freelancer                 FreelancerProfile @relation(fields: [freelancerId], references: [id])
+  freelancerId               Int
+  bid                        Bid               @relation(fields: [bidId], references: [id])
+  bidId                      Int               @unique
+  status                     EngagementStatus  @default(NEGOTIATION)
+  contractUrl                String?
+  startDate                  DateTime?
+  endDate                    DateTime?
+  milestones                 Milestone[]
+  conversations              Conversation[]
+  reviews                    Review[]
+  disputes                   Dispute[]
+  paymentStatus              PaymentStatus     @default(UNPAID)
+  paymentNotes               String?
+  freelancerMarkedReceived   Boolean           @default(false)
   freelancerMarkedReceivedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
 }
 
 model Milestone {
-  id           Int          @id @default(autoincrement())
-  engagement   Engagement   @relation(fields: [engagementId], references: [id])
-  engagementId Int
-  title        String
-  description  String?
-  amount       Int
-  dueDate      DateTime?
+  id            Int                    @id @default(autoincrement())
+  engagement    Engagement             @relation(fields: [engagementId], references: [id])
+  engagementId  Int
+  title         String
+  description   String?
+  amount        Int
+  dueDate       DateTime?
   sequenceOrder Int
-  status       MilestoneStatus @default(PENDING)
-  deliverables MilestoneDeliverable[]
+  status        MilestoneStatus        @default(PENDING)
+  deliverables  MilestoneDeliverable[]
 }
 
 model MilestoneDeliverable {
-  id           Int        @id @default(autoincrement())
-  milestone    Milestone  @relation(fields: [milestoneId], references: [id])
-  milestoneId  Int
-  fileUrl      String
-  notes        String?
-  submittedAt  DateTime   @default(now())
+  id          Int       @id @default(autoincrement())
+  milestone   Milestone @relation(fields: [milestoneId], references: [id])
+  milestoneId Int
+  fileUrl     String
+  notes       String?
+  submittedAt DateTime  @default(now())
 }
 
 model Conversation {
-  id             Int           @id @default(autoincrement())
-  project        Project?      @relation(fields: [projectId], references: [id])
-  projectId      Int?
-  engagement     Engagement?   @relation(fields: [engagementId], references: [id])
-  engagementId   Int?
-  createdBy      User          @relation(fields: [createdById], references: [id])
-  createdById    Int
-  createdAt      DateTime      @default(now())
-  messages       Message[]
-  participants   ConversationParticipant[]
+  id           Int                       @id @default(autoincrement())
+  project      Project?                  @relation(fields: [projectId], references: [id])
+  projectId    Int?
+  engagement   Engagement?               @relation(fields: [engagementId], references: [id])
+  engagementId Int?
+  createdBy    User                      @relation(fields: [createdById], references: [id])
+  createdById  Int
+  createdAt    DateTime                  @default(now())
+  messages     Message[]
+  participants ConversationParticipant[]
 }
 
 model ConversationParticipant {
@@ -299,52 +301,52 @@ model Message {
 }
 
 model Review {
-  id              Int       @id @default(autoincrement())
-  engagement      Engagement @relation(fields: [engagementId], references: [id])
-  engagementId    Int
-  reviewer        User      @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  reviewerId      Int
-  reviewee        User      @relation("ReviewsReceived", fields: [revieweeId], references: [id])
-  revieweeId      Int
-  ratingOverall   Int
-  ratingQuality   Int
+  id                  Int        @id @default(autoincrement())
+  engagement          Engagement @relation(fields: [engagementId], references: [id])
+  engagementId        Int
+  reviewer            User       @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewerId          Int
+  reviewee            User       @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  revieweeId          Int
+  ratingOverall       Int
+  ratingQuality       Int
   ratingCommunication Int
-  ratingTimeliness Int
-  comment         String?
-  createdAt       DateTime @default(now())
+  ratingTimeliness    Int
+  comment             String?
+  createdAt           DateTime   @default(now())
 }
 
 model Dispute {
-  id              Int        @id @default(autoincrement())
-  engagement      Engagement @relation(fields: [engagementId], references: [id])
+  id              Int                 @id @default(autoincrement())
+  engagement      Engagement          @relation(fields: [engagementId], references: [id])
   engagementId    Int
-  raisedBy        User       @relation(fields: [raisedById], references: [id])
+  raisedBy        User                @relation(fields: [raisedById], references: [id])
   raisedById      Int
   reasonCode      String
   description     String
-  status          DisputeStatus @default(OPEN)
+  status          DisputeStatus       @default(OPEN)
   resolutionNotes String?
-  createdAt       DateTime   @default(now())
+  createdAt       DateTime            @default(now())
   resolvedAt      DateTime?
   attachments     DisputeAttachment[]
 }
 
 model DisputeAttachment {
-  id          Int      @id @default(autoincrement())
-  dispute     Dispute  @relation(fields: [disputeId], references: [id])
+  id          Int     @id @default(autoincrement())
+  dispute     Dispute @relation(fields: [disputeId], references: [id])
   disputeId   Int
   fileUrl     String
   description String?
 }
 
 model Notification {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int
-  type       String
-  payload    Json
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String
+  payload   Json
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model AuditLog {
