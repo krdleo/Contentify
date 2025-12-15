@@ -6,12 +6,29 @@ import { z } from 'zod';
 import api from '../api/axios';
 import { FormInput } from '../components/FormInput';
 
-const portfolioSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  mediaType: z.enum(['IMAGE', 'LINK']),
-  mediaUrl: z.string().url('Invalid URL'),
-});
+const portfolioSchema = z
+  .object({
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().min(1, 'Description is required'),
+    mediaType: z.enum(['IMAGE', 'LINK']),
+    mediaUrl: z.string().url('Invalid URL').optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.mediaType === 'LINK' && !data.mediaUrl) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Media URL is required for link uploads',
+        path: ['mediaUrl'],
+      });
+    }
+    if (data.mediaType === 'IMAGE' && !data.mediaUrl) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Upload an image to continue',
+        path: ['mediaUrl'],
+      });
+    }
+  });
 
 type PortfolioFormData = z.infer<typeof portfolioSchema>;
 
@@ -20,15 +37,24 @@ export const PortfolioEditor: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<PortfolioFormData>({
     resolver: zodResolver(portfolioSchema),
+    defaultValues: {
+      mediaType: 'IMAGE',
+      mediaUrl: '',
+    },
   });
+
+  const mediaType = watch('mediaType');
+  const mediaUrl = watch('mediaUrl');
 
   useEffect(() => {
     if (id) {
@@ -38,7 +64,6 @@ export const PortfolioEditor: React.FC = () => {
 
   const fetchPortfolioItem = async () => {
     try {
-      // Get current user to get their ID
       const meResponse = await api.get('/auth/me');
       const userId = meResponse.data.data.id;
       const response = await api.get(`/freelancers/${userId}/portfolio`);
@@ -52,6 +77,29 @@ export const PortfolioEditor: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching portfolio item:', err);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError('');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const url = response.data?.data?.url;
+      if (url) {
+        setValue('mediaUrl', url, { shouldValidate: true });
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -134,17 +182,50 @@ export const PortfolioEditor: React.FC = () => {
           </div>
         </div>
 
-        <FormInput
-          label="Media URL"
-          type="url"
-          error={errors.mediaUrl?.message}
-          {...register('mediaUrl')}
-        />
+        {mediaType === 'LINK' ? (
+          <FormInput
+            label="Media URL"
+            type="url"
+            error={errors.mediaUrl?.message}
+            {...register('mediaUrl')}
+          />
+        ) : (
+          <div className="space-y-2">
+            <input type="hidden" {...register('mediaUrl')} />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Upload Image
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-gray-700"
+              />
+              <p className="text-xs text-gray-500 mt-1">Supported: images (uploaded to Cloudinary)</p>
+            </div>
+            {uploading && <p className="text-sm text-gray-600">Uploading...</p>}
+            {mediaUrl && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Uploaded URL</label>
+                <input
+                  className="input-field"
+                  type="url"
+                  value={mediaUrl}
+                  readOnly
+                />
+              </div>
+            )}
+            {errors.mediaUrl && (
+              <p className="text-sm text-red-600">{errors.mediaUrl.message}</p>
+            )}
+          </div>
+        )}
 
         <div className="flex space-x-4">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || uploading}
             className="btn-primary disabled:opacity-50"
           >
             {loading ? 'Saving...' : id ? 'Update' : 'Add Item'}
@@ -161,4 +242,3 @@ export const PortfolioEditor: React.FC = () => {
     </div>
   );
 };
-

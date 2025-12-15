@@ -1,21 +1,43 @@
 import { prisma } from '../../config/database';
 
 export const createEngagementFromBid = async (bidId: number) => {
-  const bid = await prisma.bid.findUnique({ where: { id: bidId }, include: { project: true } });
+  const bid = await prisma.bid.findUnique({
+    where: { id: bidId },
+    include: { project: { include: { milestones: true } } }
+  });
   if (!bid) throw new Error('BID_NOT_FOUND');
-  return prisma.engagement.create({
-    data: {
-      bidId: bid.id,
-      projectId: bid.projectId,
-      businessId: bid.project.businessId,
-      freelancerId: bid.freelancerId,
-      status: 'NEGOTIATION'
+
+  return prisma.$transaction(async (tx) => {
+    const engagement = await tx.engagement.create({
+      data: {
+        bidId: bid.id,
+        projectId: bid.projectId,
+        businessId: bid.project.businessId,
+        freelancerId: bid.freelancerId,
+        status: 'NEGOTIATION'
+      }
+    });
+
+    if (bid.project?.milestones?.length) {
+      await tx.milestone.createMany({
+        data: bid.project.milestones.map((m) => ({
+          engagementId: engagement.id,
+          title: m.title,
+          description: m.description,
+          amount: m.amount,
+          dueDate: null,
+          sequenceOrder: m.sequenceOrder,
+          status: 'PENDING'
+        }))
+      });
     }
+
+    return engagement;
   });
 };
 
 export const getEngagement = async (id: number) =>
-  prisma.engagement.findUnique({ where: { id }, include: { milestones: true } });
+  prisma.engagement.findUnique({ where: { id }, include: { milestones: { orderBy: { sequenceOrder: 'asc' } } } });
 
 export const listEngagementsForUser = async (userId: number, role: string) => {
   if (role === 'BUSINESS') {

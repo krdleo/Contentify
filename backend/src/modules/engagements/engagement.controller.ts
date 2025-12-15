@@ -29,7 +29,6 @@ const milestoneSchema = z.array(
 
 const paymentSchema = z.object({ paymentStatus: z.string(), paymentNotes: z.string().optional() });
 const deliverableSchema = z.object({ fileUrl: z.string().url(), notes: z.string().optional() });
-import { createEngagementFromBid, getEngagement, listEngagementsForUser } from './engagement.service';
 
 export const acceptBidHandler = async (req: AuthenticatedRequest, res: Response) => {
   try {

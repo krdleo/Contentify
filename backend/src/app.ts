@@ -16,6 +16,7 @@ import bidRoutes from './modules/bids/bid.routes';
 import engagementRoutes from './modules/engagements/engagement.routes';
 import notificationRoutes from './modules/notifications/notification.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import uploadRoutes from './modules/upload/upload.routes';
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/v1', portfolioRoutes);
 app.use('/api/v1', projectRoutes);
 app.use('/api/v1', bidRoutes);
 app.use('/api/v1', engagementRoutes);
+app.use('/api/v1', uploadRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/admin', adminRoutes);
 

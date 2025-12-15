@@ -1,18 +1,15 @@
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+import { defineConfig } from 'tailwindcss';
+
+export default defineConfig({
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
-        primary: '#FF6A00',
-        background: '#FFFFFF',
-        text: '#333333',
+        primary: '#FF6A00',        // burning orange
+        background: '#FFFFFF',     // white
+        foreground: '#1A1A1A',     // dark gray for text
       },
     },
   },
   plugins: [],
-}
-
+});

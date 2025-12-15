@@ -19,6 +19,14 @@ interface Bid {
   createdAt: string;
 }
 
+interface ProjectMilestone {
+  id: number;
+  title: string;
+  description?: string | null;
+  amount: number;
+  sequenceOrder: number;
+}
+
 interface Project {
   id: number;
   title: string;
@@ -28,6 +36,7 @@ interface Project {
   budgetType: string;
   budgetAmount?: number;
   createdAt: string;
+  milestones?: ProjectMilestone[];
 }
 
 export const ProjectDetails: React.FC = () => {
@@ -99,7 +108,7 @@ export const ProjectDetails: React.FC = () => {
           onClick={() => navigate('/business/projects')}
           className="text-primary hover:text-opacity-80 mb-4"
         >
-          ← Back to Projects
+          &lt; Back to Projects
         </button>
         <h1 className="text-3xl font-bold text-gray-900">{project.title}</h1>
         <p className="mt-2 text-gray-600">{project.description}</p>
@@ -115,6 +124,34 @@ export const ProjectDetails: React.FC = () => {
           )}
         </div>
       </div>
+
+      {project.milestones && project.milestones.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-xl font-semibold mb-4">Proposed Milestones</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">#</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Title</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Description</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {project.milestones.map((m) => (
+                  <tr key={m.id}>
+                    <td className="px-4 py-2 text-sm text-gray-700">{m.sequenceOrder}</td>
+                    <td className="px-4 py-2 text-sm text-gray-900 font-medium">{m.title}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{m.description || '—'}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">${m.amount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Bids Received ({bids.length})</h2>
@@ -204,4 +241,3 @@ export const ProjectDetails: React.FC = () => {
     </div>
   );
 };
-

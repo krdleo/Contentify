@@ -181,6 +181,7 @@ model Project {
   budgetType      BudgetType
   budgetMin       Int?
   budgetMax       Int?
+  budgetAmount    Int?
   locationType    LocationType
   city            String?
   visibility      Visibility
@@ -190,8 +191,20 @@ model Project {
   bids            Bid[]
   engagements     Engagement[]
   conversations   Conversation[]
+  milestones      ProjectMilestone[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
+}
+
+model ProjectMilestone {
+  id            Int      @id @default(autoincrement())
+  project       Project  @relation(fields: [projectId], references: [id])
+  projectId     Int
+  title         String
+  description   String?
+  amount        Int
+  sequenceOrder Int
+  createdAt     DateTime @default(now())
 }
 
 model ProjectAttachment {
