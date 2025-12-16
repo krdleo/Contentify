@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error: any) {
           set({ isLoading: false });
-          const errorMessage = error.response?.data?.message || 'Login failed';
+          const errorMessage = error.response?.data?.error?.message || 'Login failed';
           throw new Error(errorMessage);
         }
       },
@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error: any) {
           set({ isLoading: false });
-          const errorMessage = error.response?.data?.message || 'Signup failed';
+          const errorMessage = error.response?.data?.error?.message || 'Signup failed';
           throw new Error(errorMessage);
         }
       },

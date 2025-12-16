@@ -6,7 +6,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "prisma generate && tsc -p .",
     "start": "node dist/server.js",
-    "lint": "eslint 'src/**/*.{ts,tsx}'"
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "test": "vitest"
   },
   "dependencies": {
     "@prisma/client": "^5.17.0",
@@ -32,12 +33,16 @@
     "@types/morgan": "^1.9.7",
     "@types/multer": "^1.4.12",
     "@types/node": "^20.11.19",
+    "@types/supertest": "^6.0.3",
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",
     "prisma": "^5.17.0",
+    "supertest": "^7.1.4",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.2"
+    "typescript": "^5.4.2",
+    "vitest": "^4.0.16",
+    "vitest-mock-extended": "^3.1.0"
   }
 }
