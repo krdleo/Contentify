@@ -7,7 +7,8 @@
     "build": "prisma generate && tsc -p .",
     "start": "node dist/server.js",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
-    "test": "vitest"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@prisma/client": "^5.17.0",
@@ -42,6 +43,7 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.2",
+    "@vitest/coverage-v8": "^4.0.16",
     "vitest": "^4.0.16",
     "vitest-mock-extended": "^3.1.0"
   }

@@ -53,13 +53,27 @@ export const listMyEngagementsHandler = async (req: AuthenticatedRequest, res: R
 };
 
 export const startEngagementHandler = async (req: AuthenticatedRequest, res: Response) => {
-  const engagement = await updateEngagementStatus(Number(req.params.id), 'ACTIVE');
-  return success(res, engagement);
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+  try {
+    const engagement = await updateEngagementStatus(Number(req.params.id), 'ACTIVE', req.user.id, req.user.role as any);
+    return success(res, engagement);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    if (error?.message === 'ENGAGEMENT_NOT_FOUND') return failure(res, 'NOT_FOUND', 'Engagement not found', undefined, 404);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to start engagement', undefined, 500);
+  }
 };
 
 export const cancelEngagementHandler = async (req: AuthenticatedRequest, res: Response) => {
-  const engagement = await updateEngagementStatus(Number(req.params.id), 'CANCELLED');
-  return success(res, engagement);
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+  try {
+    const engagement = await updateEngagementStatus(Number(req.params.id), 'CANCELLED', req.user.id, req.user.role as any);
+    return success(res, engagement);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    if (error?.message === 'ENGAGEMENT_NOT_FOUND') return failure(res, 'NOT_FOUND', 'Engagement not found', undefined, 404);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to cancel engagement', undefined, 500);
+  }
 };
 
 export const setMilestonesHandler = async (req: AuthenticatedRequest, res: Response) => {
@@ -79,20 +93,43 @@ export const listMilestonesHandler = async (req: AuthenticatedRequest, res: Resp
 };
 
 export const updateMilestoneHandler = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
   const milestoneId = Number(req.params.milestoneId);
   const data: any = req.body;
-  const milestone = await updateMilestone(milestoneId, {
-    title: data.title,
-    description: data.description,
-    amount: data.amount,
-    dueDate: data.dueDate ? new Date(data.dueDate) : undefined
-  });
-  return success(res, milestone);
+  try {
+    const milestone = await updateMilestone(
+      milestoneId,
+      {
+        title: data.title,
+        description: data.description,
+        amount: data.amount,
+        dueDate: data.dueDate ? new Date(data.dueDate) : undefined
+      },
+      req.user.id
+    );
+    return success(res, milestone);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    if (error?.message === 'MILESTONE_NOT_FOUND') return failure(res, 'NOT_FOUND', 'Milestone not found', undefined, 404);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to update milestone', undefined, 500);
+  }
 };
 
 export const changeMilestoneStatusHandler = async (req: AuthenticatedRequest, res: Response) => {
-  const milestone = await setMilestoneStatus(Number(req.params.milestoneId), String(req.body.status));
-  return success(res, milestone);
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+  try {
+    const milestone = await setMilestoneStatus(
+      Number(req.params.milestoneId),
+      String(req.body.status) as any,
+      req.user.id,
+      req.user.role as any
+    );
+    return success(res, milestone);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    if (error?.message === 'MILESTONE_NOT_FOUND') return failure(res, 'NOT_FOUND', 'Milestone not found', undefined, 404);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to update milestone', undefined, 500);
+  }
 };
 
 export const addDeliverableHandler = async (req: AuthenticatedRequest, res: Response) => {

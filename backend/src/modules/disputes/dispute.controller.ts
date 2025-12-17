@@ -16,8 +16,15 @@ export const createDisputeHandler = async (req: AuthenticatedRequest, res: Respo
   if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
   const parsed = disputeSchema.safeParse(req.body);
   if (!parsed.success) return failure(res, 'VALIDATION_ERROR', 'Invalid request body', undefined, 422);
-  const dispute = await createDispute(Number(req.params.id), req.user.id, parsed.data.reasonCode, parsed.data.description);
-  return success(res, dispute, 201);
+  try {
+    const dispute = await createDispute(Number(req.params.id), req.user.id, parsed.data.reasonCode, parsed.data.description);
+    return success(res, dispute, 201);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    if (error?.message === 'ENGAGEMENT_NOT_FOUND')
+      return failure(res, 'NOT_FOUND', 'Engagement not found', undefined, 404);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to create dispute', undefined, 500);
+  }
 };
 
 export const listMyDisputesHandler = async (req: AuthenticatedRequest, res: Response) => {
@@ -27,9 +34,15 @@ export const listMyDisputesHandler = async (req: AuthenticatedRequest, res: Resp
 };
 
 export const getDisputeHandler = async (req: AuthenticatedRequest, res: Response) => {
-  const dispute = await getDispute(Number(req.params.id));
-  if (!dispute) return failure(res, 'NOT_FOUND', 'Dispute not found', undefined, 404);
-  return success(res, dispute);
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+  try {
+    const dispute = await getDispute(Number(req.params.id), req.user.id, req.user.isAdmin);
+    if (!dispute) return failure(res, 'NOT_FOUND', 'Dispute not found', undefined, 404);
+    return success(res, dispute);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to fetch dispute', undefined, 500);
+  }
 };
 
 export const addDisputeAttachmentHandler = async (req: AuthenticatedRequest, res: Response) => {
@@ -47,6 +60,6 @@ export const adminListDisputesHandler = async (_req: AuthenticatedRequest, res: 
 export const adminResolveDisputeHandler = async (req: AuthenticatedRequest, res: Response) => {
   const parsed = resolveSchema.safeParse(req.body);
   if (!parsed.success) return failure(res, 'VALIDATION_ERROR', 'Invalid request body', undefined, 422);
-  const dispute = await resolveDispute(Number(req.params.id), parsed.data.status, parsed.data.resolutionNotes);
+  const dispute = await resolveDispute(Number(req.params.id), parsed.data.status as any, parsed.data.resolutionNotes);
   return success(res, dispute);
 };

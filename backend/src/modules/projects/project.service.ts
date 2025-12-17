@@ -1,17 +1,23 @@
 import { prisma } from '../../config/database';
 
 export const createProject = async (businessId: number, data: any) => {
-  const { milestones, ...projectData } = data;
+  const { milestones, deadline, ...projectData } = data;
+
+  const expectedEndDate = deadline ? new Date(deadline) : undefined;
+  if (deadline && Number.isNaN(expectedEndDate.getTime())) {
+    throw new Error('INVALID_DEADLINE_DATE');
+  }
 
   return prisma.project.create({
     data: {
       ...projectData,
+      expectedEndDate,
       businessId,
       milestones: milestones?.length
         ? {
             create: milestones.map((m: any, i: number) => ({
               title: m.title,
-              description: m.description,
+              description: m.description ?? '',
               amount: m.amount,
               sequenceOrder: m.sequenceOrder ?? i + 1
             }))
@@ -49,3 +55,6 @@ export const listMyProjects = async (businessId: number) =>
     where: { businessId },
     include: { milestones: { orderBy: { sequenceOrder: 'asc' } } }
   });
+
+// Aliases for clarity in tests/handlers
+export const getProjects = listProjects;

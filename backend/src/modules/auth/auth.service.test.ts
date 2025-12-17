@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { signup } from './auth.service';
 import { prisma } from '../../config/database';
+import { hashPassword } from '../../utils/password';
 
 // 1. Mock the dependencies BEFORE importing them
 vi.mock('../../utils/password', () => ({
@@ -29,7 +30,7 @@ describe('AuthService - Signup', () => {
     vi.clearAllMocks();
   });
 
-  it('should successfully signup a new business user', async () => {
+  it('should successfully signup a new BUSINESS user and send correct prisma payload', async () => {
     // Arrange: Mock that no user exists with this email
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
@@ -54,9 +55,65 @@ describe('AuthService - Signup', () => {
 
     // Assert
     expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: 'test@business.com' } });
-    expect(prisma.user.create).toHaveBeenCalled();
+    expect(hashPassword).toHaveBeenCalledWith('password123');
+
+    const createArgs = vi.mocked(prisma.user.create).mock.calls[0]?.[0] as any;
+    expect(createArgs).toMatchObject({
+      data: {
+        email: 'test@business.com',
+        passwordHash: 'hashed_password_123',
+        role: 'BUSINESS',
+        status: 'ACTIVE',
+        businessProfile: { create: { companyName: 'New Business' } },
+      },
+      include: { businessProfile: true, freelancerProfile: true },
+    });
+    expect(createArgs.data).not.toHaveProperty('freelancerProfile');
+
     expect(result.user).toEqual(mockCreatedUser);
     expect(result.accessToken).toBe('mock_access_token');
+    expect(result.refreshToken).toBe('mock_refresh_token');
+  });
+
+  it('should successfully signup a new FREELANCER user and send correct prisma payload', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+
+    const mockCreatedUser = {
+      id: 2,
+      email: 'test@freelancer.com',
+      role: 'FREELANCER',
+      isAdmin: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      passwordHash: 'hashed_password_123',
+    };
+    vi.mocked(prisma.user.create).mockResolvedValue(mockCreatedUser as any);
+
+    const result = await signup({
+      email: 'test@freelancer.com',
+      password: 'password123',
+      role: 'FREELANCER',
+    });
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: 'test@freelancer.com' } });
+    expect(hashPassword).toHaveBeenCalledWith('password123');
+
+    const createArgs = vi.mocked(prisma.user.create).mock.calls[0]?.[0] as any;
+    expect(createArgs).toMatchObject({
+      data: {
+        email: 'test@freelancer.com',
+        passwordHash: 'hashed_password_123',
+        role: 'FREELANCER',
+        status: 'ACTIVE',
+        freelancerProfile: { create: { displayName: 'New Freelancer' } },
+      },
+      include: { businessProfile: true, freelancerProfile: true },
+    });
+    expect(createArgs.data).not.toHaveProperty('businessProfile');
+
+    expect(result.user).toEqual(mockCreatedUser);
+    expect(result.accessToken).toBe('mock_access_token');
+    expect(result.refreshToken).toBe('mock_refresh_token');
   });
 
   it('should throw error if email is already taken', async () => {

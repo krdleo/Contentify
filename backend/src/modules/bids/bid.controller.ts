@@ -41,11 +41,25 @@ export const listMyBidsHandler = async (req: AuthenticatedRequest, res: Response
 };
 
 export const shortlistBidHandler = async (req: AuthenticatedRequest, res: Response) => {
-  const bid = await updateBidStatus(Number(req.params.id), 'SHORTLISTED');
-  return success(res, bid);
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+  try {
+    const bid = await updateBidStatus(Number(req.params.id), 'SHORTLISTED', req.user.id);
+    return success(res, bid);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    if (error?.message === 'BID_NOT_FOUND') return failure(res, 'NOT_FOUND', 'Bid not found', undefined, 404);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to update bid', undefined, 500);
+  }
 };
 
 export const rejectBidHandler = async (req: AuthenticatedRequest, res: Response) => {
-  const bid = await updateBidStatus(Number(req.params.id), 'REJECTED');
-  return success(res, bid);
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
+  try {
+    const bid = await updateBidStatus(Number(req.params.id), 'REJECTED', req.user.id);
+    return success(res, bid);
+  } catch (error: any) {
+    if (error?.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
+    if (error?.message === 'BID_NOT_FOUND') return failure(res, 'NOT_FOUND', 'Bid not found', undefined, 404);
+    return failure(res, 'INTERNAL_ERROR', 'Unable to update bid', undefined, 500);
+  }
 };

@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -7,15 +7,19 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
   ({ label, error, className = '', ...props }, ref) => {
+    const autoId = useId();
+    const inputId = props.id ?? autoId;
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
             {label}
           </label>
         )}
         <input
           ref={ref}
+          id={inputId}
           className={`input-field ${error ? 'border-red-500' : ''} ${className}`}
           {...props}
         />

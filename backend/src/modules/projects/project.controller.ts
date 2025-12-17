@@ -5,8 +5,15 @@ import { createProject, getProject, listMyProjects, listProjects } from './proje
 
 export const createProjectHandler = async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
-  const project = await createProject(req.user.id, req.body);
-  return success(res, project, 201);
+  try {
+    const project = await createProject(req.user.id, req.body);
+    return success(res, project, 201);
+  } catch (error: any) {
+    if (error?.message === 'INVALID_DEADLINE_DATE') {
+      return failure(res, 'INVALID_DEADLINE_DATE', 'Invalid deadline date format', undefined, 400);
+    }
+    return failure(res, 'INTERNAL_ERROR', 'Unable to create project', undefined, 500);
+  }
 };
 
 export const listProjectsHandler = async (req: AuthenticatedRequest, res: Response) => {
