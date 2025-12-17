@@ -8,7 +8,7 @@ interface Bid {
   bidType: string;
   proposedTimelineDays: number;
   status: string;
-  project: {
+  project?: {
     id: number;
     title: string;
   };
@@ -65,44 +65,54 @@ export const MyBids: React.FC = () => {
         </div>
       ) : (
         <div className="grid gap-4">
-          {bids.map((bid) => (
-            <div
-              key={bid.id}
-              className="bg-white p-6 rounded-lg shadow-sm border border-gray-200"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <Link
-                    to={`/freelancer/projects/${bid.project.id}`}
-                    className="text-xl font-semibold text-gray-900 hover:text-primary"
-                  >
-                    {bid.project.title}
-                  </Link>
-                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
-                    <span>
-                      <strong>Bid Amount:</strong> ${bid.bidAmount} ({bid.bidType})
-                    </span>
-                    <span>
-                      <strong>Timeline:</strong> {bid.proposedTimelineDays} days
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      bid.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
-                      bid.status === 'SHORTLISTED' ? 'bg-blue-100 text-blue-800' :
-                      bid.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {bid.status}
-                    </span>
+          {bids.map((bid) => {
+            const projectId = bid.project?.id;
+            const projectTitle = bid.project?.title ?? '(Project unavailable)';
+
+            return (
+              <div
+                key={bid.id}
+                className="bg-white p-6 rounded-lg shadow-sm border border-gray-200"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    {projectId ? (
+                      <Link
+                        to={`/freelancer/projects/${projectId}`}
+                        className="text-xl font-semibold text-gray-900 hover:text-primary"
+                      >
+                        {projectTitle}
+                      </Link>
+                    ) : (
+                      <div className="text-xl font-semibold text-gray-900">
+                        {projectTitle}
+                      </div>
+                    )}
+                    <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
+                      <span>
+                        <strong>Bid Amount:</strong> ${bid.bidAmount} ({bid.bidType})
+                      </span>
+                      <span>
+                        <strong>Timeline:</strong> {bid.proposedTimelineDays} days
+                      </span>
+                    </div>
+                    <div className="mt-4">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        bid.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                        bid.status === 'SHORTLISTED' ? 'bg-blue-100 text-blue-800' :
+                        bid.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {bid.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 };
-

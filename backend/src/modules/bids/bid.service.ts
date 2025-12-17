@@ -7,11 +7,34 @@ export const createBid = async (projectId: number, freelancerId: number, data: a
 export const placeBid = createBid;
 
 export const listProjectBids = async (projectId: number) =>
-  prisma.bid.findMany({ where: { projectId }, orderBy: { createdAt: 'desc' } });
+  prisma.bid.findMany({
+    where: { projectId },
+    include: {
+      freelancer: {
+        select: {
+          id: true,
+          displayName: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
 
 export const getBidsByProject = listProjectBids;
 
-export const listMyBids = async (freelancerId: number) => prisma.bid.findMany({ where: { freelancerId } });
+export const listMyBids = async (freelancerId: number) =>
+  prisma.bid.findMany({
+    where: { freelancerId },
+    include: {
+      project: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
 
 export const updateBidStatus = async (id: number, status: BidStatus, userId: number) => {
   const bid = await prisma.bid.findUnique({ where: { id }, include: { project: true } });

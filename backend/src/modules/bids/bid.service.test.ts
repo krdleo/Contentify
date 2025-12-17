@@ -1,11 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { listMyBids } from './bid.service';
 import { prisma } from '../../config/database';
-import { getBidsByProject, placeBid } from './bid.service';
 
 vi.mock('../../config/database', () => ({
   prisma: {
     bid: {
-      create: vi.fn(),
       findMany: vi.fn(),
     },
   },
@@ -16,29 +15,23 @@ describe('bid.service', () => {
     vi.clearAllMocks();
   });
 
-  it('placeBid forwards payload to prisma.bid.create', async () => {
-    const payload = { bidAmount: 500, bidType: 'FIXED', proposedTimelineDays: 30, coverLetter: 'Hi' };
-    const createdBid = { id: 7, projectId: 3, freelancerId: 9, ...payload };
-    vi.mocked(prisma.bid.create).mockResolvedValue(createdBid as any);
+  describe('listMyBids', () => {
+    it('includes project id and title and orders by newest first', async () => {
+      const freelancerId = 42;
+      const bids = [
+        { id: 1, project: { id: 10, title: 'Build API' }, createdAt: new Date() },
+      ];
 
-    const result = await placeBid(3, 9, payload);
+      vi.mocked(prisma.bid.findMany).mockResolvedValue(bids as any);
 
-    expect(prisma.bid.create).toHaveBeenCalledWith({
-      data: { ...payload, projectId: 3, freelancerId: 9 },
+      const result = await listMyBids(freelancerId);
+
+      expect(prisma.bid.findMany).toHaveBeenCalledWith({
+        where: { freelancerId },
+        include: { project: { select: { id: true, title: true } } },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result).toEqual(bids);
     });
-    expect(result).toEqual(createdBid);
-  });
-
-  it('getBidsByProject retrieves bids ordered by createdAt desc', async () => {
-    const bids = [{ id: 1 }, { id: 2 }];
-    vi.mocked(prisma.bid.findMany).mockResolvedValue(bids as any);
-
-    const result = await getBidsByProject(12);
-
-    expect(prisma.bid.findMany).toHaveBeenCalledWith({
-      where: { projectId: 12 },
-      orderBy: { createdAt: 'desc' },
-    });
-    expect(result).toEqual(bids);
   });
 });
