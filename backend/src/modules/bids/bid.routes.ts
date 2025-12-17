@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { createBidHandler, listMyBidsHandler, listProjectBidsHandler, rejectBidHandler, shortlistBidHandler } from './bid.controller';
-import { createBidHandler, listMyBidsHandler, listProjectBidsHandler } from './bid.controller';
 import { requireAuth, requireRole } from '../../middleware/authMiddleware';
 
 const router = Router();
