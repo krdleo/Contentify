@@ -1,50 +1,102 @@
 import { prisma } from '../../config/database';
 import type { EngagementStatus, MilestoneStatus, UserRole } from '@prisma/client';
 
-export const createEngagementFromBid = async (bidId: number) => {
+export const createEngagementFromBid = async (bidId: number, businessId: number) => {
   const bid = await prisma.bid.findUnique({
     where: { id: bidId },
     include: { project: { include: { milestones: true } } }
   });
   if (!bid) throw new Error('BID_NOT_FOUND');
 
-  return prisma.$transaction(async (tx) => {
-    const engagement = await tx.engagement.create({
-      data: {
-        bidId: bid.id,
-        projectId: bid.projectId,
-        businessId: bid.project.businessId,
-        freelancerId: bid.freelancerId,
-        status: 'NEGOTIATION'
+  if (bid.project.businessId !== businessId) throw new Error('FORBIDDEN');
+
+  const existingEngagement = await prisma.engagement.findUnique({ where: { bidId: bid.id } });
+  if (existingEngagement) {
+    if (bid.status !== 'ACCEPTED') {
+      await prisma.bid.update({ where: { id: bid.id }, data: { status: 'ACCEPTED' } });
+    }
+    return { engagement: existingEngagement, created: false };
+  }
+
+  try {
+    const engagement = await prisma.$transaction(async (tx) => {
+      const createdEngagement = await tx.engagement.create({
+        data: {
+          bidId: bid.id,
+          projectId: bid.projectId,
+          businessId: bid.project.businessId,
+          freelancerId: bid.freelancerId,
+          status: 'NEGOTIATION'
+        }
+      });
+
+      if (bid.project?.milestones?.length) {
+        await tx.milestone.createMany({
+          data: bid.project.milestones.map((m) => ({
+            engagementId: createdEngagement.id,
+            title: m.title,
+            description: m.description,
+            amount: m.amount,
+            dueDate: null,
+            sequenceOrder: m.sequenceOrder,
+            status: 'PENDING'
+          }))
+        });
       }
+
+      await tx.bid.update({ where: { id: bid.id }, data: { status: 'ACCEPTED' } });
+
+      return createdEngagement;
     });
 
-    if (bid.project?.milestones?.length) {
-      await tx.milestone.createMany({
-        data: bid.project.milestones.map((m) => ({
-          engagementId: engagement.id,
-          title: m.title,
-          description: m.description,
-          amount: m.amount,
-          dueDate: null,
-          sequenceOrder: m.sequenceOrder,
-          status: 'PENDING'
-        }))
-      });
+    return { engagement, created: true };
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      const engagement = await prisma.engagement.findUnique({ where: { bidId: bid.id } });
+      if (engagement) return { engagement, created: false };
     }
-
-    return engagement;
-  });
+    throw error;
+  }
 };
 
-export const getEngagement = async (id: number) =>
-  prisma.engagement.findUnique({ where: { id }, include: { milestones: { orderBy: { sequenceOrder: 'asc' } } } });
+export const getEngagement = async (id: number) => {
+  const engagement = await prisma.engagement.findUnique({
+    where: { id },
+    include: {
+      milestones: { orderBy: { sequenceOrder: 'asc' } },
+      project: { select: { id: true, title: true } },
+      business: { select: { id: true, user: { select: { email: true } } } },
+      freelancer: { select: { id: true, user: { select: { email: true } } } }
+    }
+  });
+
+  if (!engagement) return null;
+
+  return {
+    ...engagement,
+    business: engagement.business ? { id: engagement.business.id, email: engagement.business.user.email } : null,
+    freelancer: engagement.freelancer ? { id: engagement.freelancer.id, email: engagement.freelancer.user.email } : null
+  };
+};
 
 export const listEngagementsForUser = async (userId: number, role: string) => {
-  if (role === 'BUSINESS') {
-    return prisma.engagement.findMany({ where: { businessId: userId } });
-  }
-  return prisma.engagement.findMany({ where: { freelancerId: userId } });
+  const where = role === 'BUSINESS' ? { businessId: userId } : { freelancerId: userId };
+
+  const rows = await prisma.engagement.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      project: { select: { id: true, title: true } },
+      business: { select: { id: true, user: { select: { email: true } } } },
+      freelancer: { select: { id: true, user: { select: { email: true } } } }
+    }
+  });
+
+  return rows.map((e) => ({
+    ...e,
+    business: e.business ? { id: e.business.id, email: e.business.user.email } : null,
+    freelancer: e.freelancer ? { id: e.freelancer.id, email: e.freelancer.user.email } : null
+  }));
 };
 
 export const updateEngagementStatus = async (id: number, status: EngagementStatus, userId: number, role: UserRole) => {

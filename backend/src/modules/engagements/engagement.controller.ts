@@ -31,11 +31,13 @@ const paymentSchema = z.object({ paymentStatus: z.string(), paymentNotes: z.stri
 const deliverableSchema = z.object({ fileUrl: z.string().url(), notes: z.string().optional() });
 
 export const acceptBidHandler = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) return failure(res, 'UNAUTHORIZED', 'Login required', undefined, 401);
   try {
-    const engagement = await createEngagementFromBid(Number(req.params.id));
-    return success(res, engagement, 201);
+    const result = await createEngagementFromBid(Number(req.params.id), req.user.id);
+    return success(res, result.engagement, result.created ? 201 : 200);
   } catch (error: any) {
     if (error.message === 'BID_NOT_FOUND') return failure(res, 'NOT_FOUND', 'Bid not found', undefined, 404);
+    if (error.message === 'FORBIDDEN') return failure(res, 'FORBIDDEN', 'Not authorized', undefined, 403);
     return failure(res, 'INTERNAL_ERROR', 'Unable to create engagement', undefined, 500);
   }
 };

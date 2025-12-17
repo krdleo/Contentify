@@ -73,10 +73,10 @@ export const EngagementList: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-gray-900">
-                    {engagement.project.title}
+                    {engagement.project?.title ?? '(Project unavailable)'}
                   </h3>
                   <p className="mt-2 text-gray-600">
-                    Client: {engagement.business.email}
+                    Client: {engagement.business?.email ?? '(Client unavailable)'}
                   </p>
                   <div className="mt-4 flex items-center space-x-4 text-sm">
                     <span className={`px-2 py-1 rounded ${
@@ -105,4 +105,3 @@ export const EngagementList: React.FC = () => {
     </div>
   );
 };
-

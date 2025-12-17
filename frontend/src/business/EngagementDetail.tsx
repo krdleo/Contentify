@@ -134,8 +134,8 @@ export const EngagementDetail: React.FC = () => {
         >
           ← Back to Engagements
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">{engagement.project.title}</h1>
-        <p className="mt-2 text-gray-600">Freelancer: {engagement.freelancer.email}</p>
+        <h1 className="text-3xl font-bold text-gray-900">{engagement.project?.title ?? '(Project unavailable)'}</h1>
+        <p className="mt-2 text-gray-600">Freelancer: {engagement.freelancer?.email ?? '(Freelancer unavailable)'}</p>
         <div className="mt-4 flex items-center space-x-4 text-sm">
           <span className={`px-2 py-1 rounded ${
             engagement.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
@@ -289,4 +289,3 @@ export const EngagementDetail: React.FC = () => {
     </div>
   );
 };
-
